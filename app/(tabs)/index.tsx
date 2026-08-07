@@ -1,98 +1,256 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function HomeScreen() {
+import { sendChatMessage } from "../../utils/services/services";
+import { ChatMessage, Mode } from "../../utils/types";
+
+const CLIENT_ID = "mobile_client_1";
+const DEFAULT_MODE: Mode = "normal";
+
+/**
+ * 🔐 Generador de IDs únicos y estables para FlatList
+ */
+function uniqueId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * ✅ Lista de modos (unificados con backend)
+ * IMPORTANTE: "normal" es el modo por defecto (backend).
+ */
+const MODES: { id: Mode; label: string }[] = [
+  { id: "normal", label: "Modo general" },
+  { id: "organizacion", label: "Organización" },
+  { id: "ventas", label: "Ventas" },
+  { id: "contenidos", label: "Contenidos" },
+  { id: "ciberdemia", label: "Ciberdemia" },
+];
+
+export default function IndexScreen() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: uniqueId("welcome"),
+      text: "Hola, soy MyClarix. ¿En qué te ayudo hoy?",
+      sender: "assistant",
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+
+  const [inputText, setInputText] = useState("");
+  const [mode, setMode] = useState<Mode>(DEFAULT_MODE);
+  const [isSending, setIsSending] = useState(false);
+
+  const listRef = useRef<FlatList>(null);
+
+  // ✅ Auto-scroll al final al recibir mensajes
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToEnd({ animated: true });
+    });
+  }, [messages]);
+
+  const handleSend = async () => {
+    const textToSend = inputText.trim();
+    if (!textToSend || isSending) return;
+
+    setInputText("");
+    setIsSending(true);
+
+    const userMessage: ChatMessage = {
+      id: uniqueId("user"),
+      text: textToSend,
+      sender: "user",
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      // ✅ ORDEN CORRECTO: (clientId, message, mode)
+      const replyRaw = await sendChatMessage(CLIENT_ID, textToSend, mode);
+
+      const replyText =
+        String(
+          replyRaw?.reply ??
+            replyRaw?.message ??
+            replyRaw?.content ??
+            replyRaw?.text ??
+            ""
+        ).trim() || "Ok.";
+
+      const assistantMessage: ChatMessage = {
+        id: uniqueId("assistant"),
+        text: replyText,
+        sender: "assistant",
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (e) {
+      console.log("❌ Error enviando mensaje", e);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: uniqueId("error"),
+          text: "Error al enviar el mensaje.",
+          sender: "assistant",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const renderItem = ({ item }: { item: ChatMessage }) => {
+    const isUser = item.sender === "user";
+    return (
+      <View
+        style={[
+          styles.messageContainer,
+          isUser ? styles.messageRight : styles.messageLeft,
+        ]}
+      >
+        <Text style={styles.messageText}>{item.text}</Text>
+      </View>
+    );
+  };
+
+  const ModeButton = ({ id, label }: { id: Mode; label: string }) => (
+    <TouchableOpacity
+      style={[styles.modeButton, mode === id && styles.modeButtonActive]}
+      onPress={() => setMode(id)}
+    >
+      <Text
+        style={[styles.modeButtonText, mode === id && styles.modeButtonTextActive]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      {/* Barra de modos */}
+      <View style={styles.modesContainer}>
+        {MODES.map((m) => (
+          <ModeButton key={m.id} id={m.id} label={m.label} />
+        ))}
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Lista de mensajes */}
+      <FlatList
+        ref={listRef}
+        data={messages}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.chatContainer}
+        keyboardShouldPersistTaps="handled"
+      />
+
+      {/* Input + botón Enviar */}
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={inputText}
+          onChangeText={setInputText}
+          placeholder="Escribe tu mensaje..."
+          placeholderTextColor="#6b7280"
+          multiline
+        />
+        <TouchableOpacity
+          style={[styles.sendButton, isSending ? { opacity: 0.6 } : null]}
+          onPress={handleSend}
+          disabled={isSending}
+        >
+          <Text style={styles.sendButtonText}>{isSending ? "..." : "Enviar"}</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: "#020617" },
+
+  modesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#111827",
+    backgroundColor: "#020617",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  modeButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#374151",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  modeButtonActive: {
+    backgroundColor: "#22c55e",
+    borderColor: "#22c55e",
   },
+  modeButtonText: { color: "#9ca3af", fontSize: 12 },
+  modeButtonTextActive: { color: "#020617", fontWeight: "600" },
+
+  chatContainer: { padding: 16, paddingBottom: 80 },
+
+  messageContainer: {
+    maxWidth: "80%",
+    marginVertical: 6,
+    padding: 10,
+    borderRadius: 12,
+  },
+  messageLeft: { alignSelf: "flex-start", backgroundColor: "#1f2937" },
+  messageRight: { alignSelf: "flex-end", backgroundColor: "#3b82f6" },
+  messageText: { color: "white", fontSize: 14 },
+
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#111827",
+    backgroundColor: "#020617",
+  },
+  input: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: "#020617",
+    color: "white",
+    borderRadius: 10,
+    marginRight: 8,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: "#111827",
+  },
+  sendButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#22c55e",
+  },
+  sendButtonText: { color: "#020617", fontWeight: "bold" },
 });
