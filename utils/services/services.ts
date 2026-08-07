@@ -2,7 +2,7 @@
 
 import type { BackendChatMessage } from "../types";
 
-const BASE_URL = "https://lumina-backend-5-oy8n.onrender.com";
+const BASE_URL = "https://app.myclarix.com";
 
 // =========================
 // CHAT
