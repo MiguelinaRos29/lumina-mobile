@@ -1,50 +1,57 @@
-# Welcome to your Expo app 👋
+# Lumina Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App móvil de **MyClarix** (asistente con IA de Open Consultech) hecha con Expo y React Native. Permite conversar con el asistente en distintos modos de trabajo y gestionar citas desde el teléfono. Funciona en iOS, Android y web.
 
-## Get started
+## Qué hace
 
-1. Install dependencies
+- **Chat con el asistente de IA**, con historial de la conversación guardado en el backend.
+- **Modos de conversación**: general, organización, ventas, contenidos y Ciberdemia; el modo elegido se envía con cada mensaje para que el asistente responda según el contexto.
+- **Citas**: lista de citas del usuario, cambio de estado (por ejemplo, cancelar) y edición del motivo, con estados en español e inglés.
+- **Identificación anónima del dispositivo**: se genera un identificador aleatorio y se guarda en el almacenamiento local, sin pedir cuenta ni datos personales.
+- **Tema claro y oscuro** automático y retroalimentación háptica en la navegación.
 
-   ```bash
-   npm install
-   ```
+## Tecnologías
 
-2. Start the app
+- Expo SDK 54, React Native 0.81 y React 19 (nueva arquitectura activada)
+- TypeScript
+- Expo Router (navegación por archivos con pestañas)
+- AsyncStorage para el identificador local
+- Backend propio de MyClarix consumido por API REST
 
-   ```bash
-   npx expo start
-   ```
+## Cómo ejecutarlo
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Requisitos: Node 20+ y, para probarlo en el móvil, la app Expo Go o un emulador.
 
 ```bash
-npm run reset-project
+npm install
+npx expo start      # pulsa a (Android), i (iOS) o w (web)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+La URL del backend está definida en `utils/config.ts`, así que no hace falta ningún `.env`.
 
-## Learn more
+## Estructura
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+app/(tabs)/      pantallas: inicio (chat), chat y citas (explorar es la pantalla de ejemplo de Expo)
+app/_layout.tsx  navegación raíz
+utils/           cliente de la API (chat y citas, con timeout de 12 s), tipos, modos e id de cliente
+components/      componentes de interfaz reutilizables
+constants/       tema (colores)
+hooks/           hooks de tema y esquema de color
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Decisiones de diseño
 
-## Join the community
+- **Cliente HTTP con timeout:** las peticiones a la API se cancelan a los 12 segundos para que la app no se quede bloqueada si el servidor tarda en despertar.
+- **Tipos separados para backend y UI:** el mensaje del servidor se convierte al formato de la interfaz en un único punto (`backendToUiMessage`), con una clave única por mensaje.
+- **Sin cuentas en esta versión:** la app identifica al dispositivo con un id local, lo que evita guardar datos personales en el móvil.
 
-Join our community of developers creating universal apps.
+## Pendiente
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Dejar la URL del API en un solo sitio (ahora está repetida en tres archivos) y leerla de una variable de entorno de Expo.
+- Quitar del proyecto el código sobrante de la plantilla de Expo (pantalla de ejemplo y componentes sin uso).
+- Capturas de pantalla y despliegue de pruebas con EAS.
+
+## Autoría
+
+Miguelina Rosario · [Open Consultech](https://www.openconsultech.net)
