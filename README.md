@@ -6,7 +6,7 @@ App móvil de **MyClarix** (asistente con IA de Open Consultech) hecha con Expo 
 
 - **Chat con el asistente de IA**, con historial de la conversación guardado en el backend.
 - **Modos de conversación**: general, organización, ventas, contenidos y Ciberdemia; el modo elegido se envía con cada mensaje para que el asistente responda según el contexto.
-- **Citas**: lista, creación, cambio de estado (por ejemplo, cancelar) y edición del motivo, con estados en español e inglés.
+- **Citas**: lista de citas del usuario, cambio de estado (por ejemplo, cancelar) y edición del motivo, con estados en español e inglés.
 - **Identificación anónima del dispositivo**: se genera un identificador aleatorio y se guarda en el almacenamiento local, sin pedir cuenta ni datos personales.
 - **Tema claro y oscuro** automático y retroalimentación háptica en la navegación.
 
@@ -16,7 +16,6 @@ App móvil de **MyClarix** (asistente con IA de Open Consultech) hecha con Expo 
 - TypeScript
 - Expo Router (navegación por archivos con pestañas)
 - AsyncStorage para el identificador local
-- `chrono-node` para interpretar fechas escritas en lenguaje natural
 - Backend propio de MyClarix consumido por API REST
 
 ## Cómo ejecutarlo
@@ -33,7 +32,7 @@ La URL del backend está definida en `utils/config.ts`, así que no hace falta n
 ## Estructura
 
 ```
-app/(tabs)/      pantallas: inicio (chat), chat, citas y explorar
+app/(tabs)/      pantallas: inicio (chat), chat y citas (explorar es la pantalla de ejemplo de Expo)
 app/_layout.tsx  navegación raíz
 utils/           cliente de la API (chat y citas, con timeout de 12 s), tipos, modos e id de cliente
 components/      componentes de interfaz reutilizables
